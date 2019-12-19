@@ -13,7 +13,7 @@ export default (options = {}) => {
     maxTimeout = 10,
   } = options
 
-  const resetScroll = useCallback(() => {
+  const cancelUpdate = useCallback(() => {
     if (frameIdRef.current) {
       window.cancelAnimationFrame(frameIdRef.current)
     }
@@ -45,10 +45,6 @@ export default (options = {}) => {
   }, [])
 
   const handleDragOver = useCallback(e => {
-    if (!ref.current) {
-      return
-    }
-
     // Determine rectangle on screen
     const hoverBoundingRect = ref.current.getBoundingClientRect()
     // Get horizontal middle
@@ -111,26 +107,38 @@ export default (options = {}) => {
     frameIdRef.current = window.requestAnimationFrame(timeout)
   }, [])
 
+  const _removeEventListeners = useCallback(node => {
+    node.removeEventListener('dragover', debounceDragOver)
+    node.removeEventListener('dragleave', cancelUpdate)
+    node.removeEventListener('draglend', cancelUpdate)
+  }, [])
+
+  const _addEventListeners = useCallback(node => {
+    node.addEventListener('dragover', debounceDragOver)
+    node.addEventListener('dragleave', cancelUpdate)
+    node.addEventListener('draglend', cancelUpdate)
+  })
+
   useEffect(() => {
-    const elem = ref.current
     return () => {
-      resetScroll()
-      elem.removeEventListener('dragover', debounceDragOver)
-      elem.removeEventListener('dragleave', resetScroll)
-      elem.removeEventListener('draglend', resetScroll)
+      cancelUpdate()
+      _removeEventListeners(ref.current)
     }
   }, [])
 
-  const initRef = useCallback(elem => {
-    if (!elem || typeof elem !== 'object' || typeof elem.addEventListener !== 'function') {
-      throw new Error('Something was wrong!')
+  const setRef = useCallback(node => {
+    if (ref.current) {
+      _removeEventListeners(ref.current)
     }
-    elem.addEventListener('dragover', debounceDragOver)
-    elem.addEventListener('dragleave', resetScroll)
-    elem.addEventListener('draglend', resetScroll)
-    ref.current = elem
-    return elem
+
+    if (node) {
+      _addEventListeners(node)
+    }
+
+    ref.current = node
+
+    return ref
   }, [])
 
-  return initRef
+  return setRef
 }
