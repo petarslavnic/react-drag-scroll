@@ -1,7 +1,7 @@
-const path = require('path');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const TerserPlugin = require('terser-webpack-plugin');
-const pkg = require('./package.json');
+const path = require('path')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const TerserPlugin = require('terser-webpack-plugin')
+const pkg = require('./package.json')
 
 module.exports = {
   mode: 'production',
@@ -29,8 +29,8 @@ module.exports = {
       {
         test: /\.(js|jsx)$/,
         exclude: /node_modules/,
-        use: 'babel-loader'
-      }
+        use: 'babel-loader',
+      },
     ],
   },
   resolve: {
@@ -39,4 +39,4 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(),
   ],
-};
+}
