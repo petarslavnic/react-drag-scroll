@@ -1,13 +1,26 @@
 {
   "name": "react-drag-scroll",
   "version": "0.1.0",
-  "description": "Auto scroll while draging close to the edges",
+  "description": "Auto scroll container while dragging element close to the edges",
   "main": "dist/useDragScroll.js",
   "files": [
     "dist"
   ],
   "author": "Petar Slavnic <petarslavnic@gmail.com> (https://github.com/petarslavnic)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petarslavnic/react-drag-scroll.git"
+  },
+  "keywords": [
+    "react",
+    "drag",
+    "scroll"
+  ],
+  "bugs": {
+    "url": "https://github.com/petarslavnic/react-drag-scroll/issues"
+  },
+  "homepage": "https://github.com/petarslavnic/react-drag-scroll",
   "scripts": {
     "build": "webpack",
     "lint:js": "eslint src",
@@ -47,6 +60,6 @@
     "webpack-cli": "^3.3.10"
   },
   "peerDependencies": {
-    "react": "^16.12.0"
+    "react": "^16.8.0"
   }
 }
