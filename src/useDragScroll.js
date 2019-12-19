@@ -1,10 +1,11 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import './utils/rAF.js'
 
 export default (options = {}) => {
-  const ref = useRef({ current: null })
-  const timeRef = useRef({ current: null })
-  const frameIdRef = useRef({ current: null })
+  const ref = useRef(null)
+  const timeRef = useRef(null)
+  const frameIdRef = useRef(null)
+
   const {
     horizontalStartOffset = 0,
     verticalStartOffset = 0,
@@ -12,38 +13,38 @@ export default (options = {}) => {
     maxTimeout = 10,
   } = options
 
-  const resetScroll = () => {
+  const resetScroll = useCallback(() => {
     if (frameIdRef.current) {
       window.cancelAnimationFrame(frameIdRef.current)
     }
     clearTimeout(timeRef.current)
-  }
+  }, [])
 
-  const update = ({ speedX, scrollX, speedY, scrollY }) => {
-    if (ref.current) {
-      clearTimeout(timeRef.current)
+  const update = useCallback(({ speedX, scrollX, speedY, scrollY }) => {
+    clearTimeout(timeRef.current)
 
-      const speed = speedX > speedY ? speedX : speedY
-      // lower timeout if faster
-      const timeout = maxTimeout - Math.ceil((speed / 100) * maxTimeout)
+    const speed = speedX > speedY ? speedX : speedY
+    // lower timeout if faster
+    const timeout = maxTimeout - Math.ceil((speed / 100) * maxTimeout)
 
-      const scrollElem = () => {
-        // Sroll by y from 1 to max 10 pixels
-        const x = scrollX * Math.ceil((speedX / 100) * maxStep)
-        const y = scrollY * Math.ceil((speedY / 100) * maxStep)
+    const scrollElem = () => {
+      // Sroll by y from 1 to max 10 pixels
+      const x = scrollX * Math.ceil((speedX / 100) * maxStep)
+      const y = scrollY * Math.ceil((speedY / 100) * maxStep)
 
+      if (typeof ref.current.scrollBy === 'function') {
         ref.current.scrollBy(x, y)
-
-        timeRef.current = setTimeout(scrollElem, timeout)
       }
 
-      if (scrollY !== 0 || scrollX !== 0) {
-        timeRef.current = setTimeout(scrollElem, timeout)
-      }
+      timeRef.current = setTimeout(scrollElem, timeout)
     }
-  }
 
-  const handleDragOver = e => {
+    if (scrollY !== 0 || scrollX !== 0) {
+      scrollElem()
+    }
+  }, [])
+
+  const handleDragOver = useCallback(e => {
     if (!ref.current) {
       return
     }
@@ -90,9 +91,9 @@ export default (options = {}) => {
       speedY: newSpeedY,
       scrollY: newScrollY,
     })
-  }
+  }, [])
 
-  const debounceDragOver = (e) => {
+  const debounceDragOver = useCallback(e => {
     if (frameIdRef.current) {
       window.cancelAnimationFrame(frameIdRef.current)
     }
@@ -108,30 +109,28 @@ export default (options = {}) => {
     }
 
     frameIdRef.current = window.requestAnimationFrame(timeout)
-  }
+  }, [])
 
   useEffect(() => {
     const elem = ref.current
-
-    if (elem) {
-      elem.addEventListener('dragover', debounceDragOver)
-      elem.addEventListener('dragleave', resetScroll)
-      elem.addEventListener('draglend', resetScroll)
-    }
-
     return () => {
-      if (frameIdRef.current) {
-        window.cancelAnimationFrame(frameIdRef.current)
-      }
-      clearTimeout(timeRef.current)
+      resetScroll()
       elem.removeEventListener('dragover', debounceDragOver)
       elem.removeEventListener('dragleave', resetScroll)
       elem.removeEventListener('draglend', resetScroll)
     }
-  }, [ref.current]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
-  return element => {
-    ref.current = element
-    return element
-  }
+  const initRef = useCallback(elem => {
+    if (!elem || typeof elem !== 'object' || typeof elem.addEventListener !== 'function') {
+      throw new Error('Something was wrong!')
+    }
+    elem.addEventListener('dragover', debounceDragOver)
+    elem.addEventListener('dragleave', resetScroll)
+    elem.addEventListener('draglend', resetScroll)
+    ref.current = elem
+    return elem
+  }, [])
+
+  return initRef
 }
