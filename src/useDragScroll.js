@@ -1,24 +1,46 @@
-import { useRef, useState, useEffect } from 'react'
-
-const defaultValues = {
-  scrollX: 0,
-  speedX: 0,
-  scrollY: 0,
-  speedY: 0,
-}
+import { useRef, useEffect } from 'react'
+import './utils/rAF.js'
 
 export default (options = {}) => {
   const ref = useRef({ current: null })
-  const [values, setValues] = useState(defaultValues)
-  const { activeScrollPercent = 30 } = options
-
-  const copyRef = element => {
-    ref.current = element
-    return element
-  }
+  const timeRef = useRef({ current: null })
+  const frameIdRef = useRef({ current: null })
+  const {
+    horizontalStartOffset = 0,
+    verticalStartOffset = 0,
+    maxStep = 10,
+    maxTimeout = 10,
+  } = options
 
   const resetScroll = () => {
-    setValues(defaultValues)
+    if (frameIdRef.current) {
+      window.cancelAnimationFrame(frameIdRef.current)
+    }
+    clearTimeout(timeRef.current)
+  }
+
+  const update = ({ speedX, scrollX, speedY, scrollY }) => {
+    if (ref.current) {
+      clearTimeout(timeRef.current)
+
+      const speed = speedX > speedY ? speedX : speedY
+      // lower timeout if faster
+      const timeout = maxTimeout - Math.ceil((speed / 100) * maxTimeout)
+
+      const scrollElem = () => {
+        // Sroll by y from 1 to max 10 pixels
+        const x = scrollX * Math.ceil((speedX / 100) * maxStep)
+        const y = scrollY * Math.ceil((speedY / 100) * maxStep)
+
+        ref.current.scrollBy(x, y)
+
+        timeRef.current = setTimeout(scrollElem, timeout)
+      }
+
+      if (scrollY !== 0 || scrollX !== 0) {
+        timeRef.current = setTimeout(scrollElem, timeout)
+      }
+    }
   }
 
   const handleDragOver = e => {
@@ -36,8 +58,8 @@ export default (options = {}) => {
     const hoverClientX = e.clientX - hoverBoundingRect.left
     const hoverClientY = e.clientY - hoverBoundingRect.top
 
-    // Reset scroll area 100% - n%
-    const resetScrollPercent = 100 - activeScrollPercent
+    const horizontalArea = 100 - horizontalStartOffset
+    const verticalArea = 100 - verticalStartOffset
 
     // Offset from middle X
     const offsetX = hoverClientX - hoverMiddleX
@@ -52,26 +74,17 @@ export default (options = {}) => {
     let newSpeedY = 0
     let newScrollY = 0
 
-    if (percentX > resetScrollPercent && percentX <= 100) {
-      newSpeedX = Math.ceil(100 - (100 / activeScrollPercent) * (100 - percentX))
+    if (horizontalStartOffset <= percentX && percentX <= 100) {
+      newSpeedX = Math.ceil(100 - (100 / horizontalArea) * (100 - percentX))
       newScrollX = hoverClientX < hoverMiddleX ? -1 : 1
     }
 
-    if (percentY > resetScrollPercent && percentX <= 100) {
-      newSpeedY = Math.ceil(100 - (100 / activeScrollPercent) * (100 - percentY))
+    if (verticalStartOffset <= percentY && percentX <= 100) {
+      newSpeedY = Math.ceil(100 - (100 / verticalArea) * (100 - percentY))
       newScrollY = hoverClientY < hoverMiddleY ? -1 : 1
     }
 
-    if (
-      newSpeedX === values.speedX &&
-      newScrollX === values.scrollX &&
-      newSpeedY === values.speedY &&
-      newScrollY === values.scrollY
-    ) {
-      return
-    }
-
-    setValues({
+    update({
       speedX: newSpeedX,
       scrollX: newScrollX,
       speedY: newSpeedY,
@@ -79,21 +92,46 @@ export default (options = {}) => {
     })
   }
 
-  useEffect(() => {
-    if (ref.current) {
-      const elem = ref.current
+  const debounceDragOver = (e) => {
+    if (frameIdRef.current) {
+      window.cancelAnimationFrame(frameIdRef.current)
+    }
 
-      elem.addEventListener('dragover', handleDragOver)
+    const start = Date.now()
+
+    const timeout = () => {
+      if (Date.now() - start >= 1) {
+        handleDragOver(e)
+      } else {
+        frameIdRef.current = window.requestAnimationFrame(timeout)
+      }
+    }
+
+    frameIdRef.current = window.requestAnimationFrame(timeout)
+  }
+
+  useEffect(() => {
+    const elem = ref.current
+
+    if (elem) {
+      elem.addEventListener('dragover', debounceDragOver)
       elem.addEventListener('dragleave', resetScroll)
       elem.addEventListener('draglend', resetScroll)
+    }
 
-      return () => {
-        elem.removeEventListener('dragover', handleDragOver)
-        elem.removeEventListener('dragleave', resetScroll)
-        elem.removeEventListener('draglend', resetScroll)
+    return () => {
+      if (frameIdRef.current) {
+        window.cancelAnimationFrame(frameIdRef.current)
       }
+      clearTimeout(timeRef.current)
+      elem.removeEventListener('dragover', debounceDragOver)
+      elem.removeEventListener('dragleave', resetScroll)
+      elem.removeEventListener('draglend', resetScroll)
     }
   }, [ref.current]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return [values, copyRef]
+  return element => {
+    ref.current = element
+    return element
+  }
 }
