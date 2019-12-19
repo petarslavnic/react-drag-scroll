@@ -1,10 +1,10 @@
 # React Drag Scroll
 
-Set of components which provides easy integration Pusher like notification service into your React application.
+Auto scroll container while dragging element close to the edges.
 
 ## Installation
 
-React Drag Scroll requires **React 16.12.0 or later.**
+React Drag Scroll requires **React 16.8.0 or later.**
 
 ```
 npm i react-drag-scroll
