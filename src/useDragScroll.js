@@ -107,13 +107,14 @@ export default (options = {}) => {
     frameIdRef.current = window.requestAnimationFrame(timeout)
   }, [])
 
-  const _removeEventListeners = useCallback(node => {
+  const cleanUp = useCallback(node => {
+    cancelUpdate()
     node.removeEventListener('dragover', debounceDragOver)
     node.removeEventListener('dragleave', cancelUpdate)
     node.removeEventListener('draglend', cancelUpdate)
   }, [])
 
-  const _addEventListeners = useCallback(node => {
+  const init = useCallback(node => {
     node.addEventListener('dragover', debounceDragOver)
     node.addEventListener('dragleave', cancelUpdate)
     node.addEventListener('draglend', cancelUpdate)
@@ -121,18 +122,17 @@ export default (options = {}) => {
 
   useEffect(() => {
     return () => {
-      cancelUpdate()
-      _removeEventListeners(ref.current)
+      cleanUp(ref.current)
     }
   }, [])
 
   const setRef = useCallback(node => {
     if (ref.current) {
-      _removeEventListeners(ref.current)
+      cleanUp(ref.current)
     }
 
     if (node) {
-      _addEventListeners(node)
+      init(node)
     }
 
     ref.current = node
