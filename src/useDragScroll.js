@@ -45,6 +45,10 @@ export default (options = {}) => {
   }, [])
 
   const handleDragOver = useCallback(e => {
+    if (!ref.current) {
+      return
+    }
+
     // Determine rectangle on screen
     const hoverBoundingRect = ref.current.getBoundingClientRect()
     // Get horizontal middle
@@ -108,10 +112,11 @@ export default (options = {}) => {
   }, [])
 
   const cleanUp = useCallback(node => {
-    cancelUpdate()
     node.removeEventListener('dragover', debounceDragOver)
     node.removeEventListener('dragleave', cancelUpdate)
     node.removeEventListener('draglend', cancelUpdate)
+    cancelUpdate()
+    ref.current = null
   }, [])
 
   const init = useCallback(node => {
