@@ -114,7 +114,7 @@ export default (options = {}) => {
   const cleanUp = useCallback(node => {
     node.removeEventListener('dragover', debounceDragOver)
     node.removeEventListener('dragleave', cancelUpdate)
-    node.removeEventListener('draglend', cancelUpdate)
+    node.removeEventListener('dragend', cancelUpdate)
     cancelUpdate()
     ref.current = null
   }, [])
@@ -122,7 +122,7 @@ export default (options = {}) => {
   const init = useCallback(node => {
     node.addEventListener('dragover', debounceDragOver)
     node.addEventListener('dragleave', cancelUpdate)
-    node.addEventListener('draglend', cancelUpdate)
+    node.addEventListener('dragend', cancelUpdate)
   })
 
   useEffect(() => {
