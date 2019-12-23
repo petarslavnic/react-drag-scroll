@@ -115,6 +115,7 @@ export default (options = {}) => {
     node.removeEventListener('dragover', debounceDragOver)
     node.removeEventListener('dragleave', cancelUpdate)
     node.removeEventListener('dragend', cancelUpdate)
+    node.removeEventListener('drop', cancelUpdate)
     cancelUpdate()
     ref.current = null
   }, [])
@@ -123,7 +124,8 @@ export default (options = {}) => {
     node.addEventListener('dragover', debounceDragOver)
     node.addEventListener('dragleave', cancelUpdate)
     node.addEventListener('dragend', cancelUpdate)
-  })
+    node.addEventListener('drop', cancelUpdate)
+  }, [])
 
   useEffect(() => {
     return () => {
