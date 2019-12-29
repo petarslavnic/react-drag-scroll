@@ -1,10 +1,9 @@
 import { useRef, useEffect, useCallback } from 'react'
-import './utils/rAF.js'
+import throttle from 'lodash/throttle'
 
 export default (options = {}) => {
   const ref = useRef(null)
   const timeRef = useRef(null)
-  const frameIdRef = useRef(null)
 
   const {
     horizontalStartOffset = 0,
@@ -13,25 +12,18 @@ export default (options = {}) => {
     maxTimeout = 10,
   } = options
 
-  const cancelUpdate = useCallback(() => {
-    if (frameIdRef.current) {
-      window.cancelAnimationFrame(frameIdRef.current)
-    }
-    clearTimeout(timeRef.current)
-  }, [])
-
-  const update = useCallback(({ speedX, scrollX, speedY, scrollY }) => {
+  const update = ({ speedX, scrollX, speedY, scrollY }) => {
     clearTimeout(timeRef.current)
 
     const speed = speedX > speedY ? speedX : speedY
     // lower timeout if faster
     const timeout = maxTimeout - Math.ceil((speed / 100) * maxTimeout)
 
-    const scrollElem = () => {
-      // Sroll by y from 1 to max 10 pixels
-      const x = scrollX * Math.ceil((speedX / 100) * maxStep)
-      const y = scrollY * Math.ceil((speedY / 100) * maxStep)
+    // Sroll by y from 1 to max 10 pixels
+    const x = scrollX * Math.ceil((speedX / 100) * maxStep)
+    const y = scrollY * Math.ceil((speedY / 100) * maxStep)
 
+    const scrollElem = () => {
       if (typeof ref.current.scrollBy === 'function') {
         ref.current.scrollBy(x, y)
       }
@@ -42,9 +34,9 @@ export default (options = {}) => {
     if (scrollY !== 0 || scrollX !== 0) {
       scrollElem()
     }
-  }, [])
+  }
 
-  const handleDragOver = useCallback(e => {
+  const handleDragOver = throttle(e => {
     if (!ref.current) {
       return
     }
@@ -91,41 +83,28 @@ export default (options = {}) => {
       speedY: newSpeedY,
       scrollY: newScrollY,
     })
-  }, [])
+  }, 100)
 
-  const debounceDragOver = useCallback(e => {
-    if (frameIdRef.current) {
-      window.cancelAnimationFrame(frameIdRef.current)
-    }
+  const cancelUpdate = () => {
+    clearTimeout(timeRef.current)
+    handleDragOver.cancel()
+  }
 
-    const start = Date.now()
-
-    const timeout = () => {
-      if (Date.now() - start >= 1) {
-        handleDragOver(e)
-      } else {
-        frameIdRef.current = window.requestAnimationFrame(timeout)
-      }
-    }
-
-    frameIdRef.current = window.requestAnimationFrame(timeout)
-  }, [])
-
-  const cleanUp = useCallback(node => {
-    node.removeEventListener('dragover', debounceDragOver)
+  const cleanUp = node => {
+    node.removeEventListener('dragover', handleDragOver)
     node.removeEventListener('dragleave', cancelUpdate)
     node.removeEventListener('dragend', cancelUpdate)
     node.removeEventListener('drop', cancelUpdate)
     cancelUpdate()
     ref.current = null
-  }, [])
+  }
 
-  const init = useCallback(node => {
-    node.addEventListener('dragover', debounceDragOver)
+  const init = node => {
+    node.addEventListener('dragover', handleDragOver)
     node.addEventListener('dragleave', cancelUpdate)
     node.addEventListener('dragend', cancelUpdate)
     node.addEventListener('drop', cancelUpdate)
-  }, [])
+  }
 
   useEffect(() => {
     return () => {
