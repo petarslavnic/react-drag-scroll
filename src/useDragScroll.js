@@ -37,12 +37,11 @@ export default (options = {}) => {
   }
 
   const handleDragOver = throttle(e => {
-    if (!ref.current) {
-      return
-    }
-
     // Determine rectangle on screen
-    const hoverBoundingRect = ref.current.getBoundingClientRect()
+    const hoverBoundingRect = ref.current && typeof ref.current.getBoundingClientRect === 'function'
+      ? ref.current.getBoundingClientRect()
+      : { left: 0, right: ref.current.innerWidth, top: 0, bottom: ref.current.innerHeight }
+
     // Get horizontal middle
     const hoverMiddleX = (hoverBoundingRect.right - hoverBoundingRect.left) / 2
     // Get vertical middle
@@ -91,19 +90,23 @@ export default (options = {}) => {
   }
 
   const cleanUp = node => {
-    node.removeEventListener('dragover', handleDragOver)
-    node.removeEventListener('dragleave', cancelUpdate)
-    node.removeEventListener('dragend', cancelUpdate)
-    node.removeEventListener('drop', cancelUpdate)
+    if (node && typeof node.removeEventListener === 'function') {
+      node.removeEventListener('dragover', handleDragOver)
+      node.removeEventListener('dragleave', cancelUpdate)
+      node.removeEventListener('dragend', cancelUpdate)
+      node.removeEventListener('drop', cancelUpdate)
+    }
     cancelUpdate()
     ref.current = null
   }
 
   const init = node => {
-    node.addEventListener('dragover', handleDragOver)
-    node.addEventListener('dragleave', cancelUpdate)
-    node.addEventListener('dragend', cancelUpdate)
-    node.addEventListener('drop', cancelUpdate)
+    if (node && typeof node.addEventListener === 'function') {
+      node.addEventListener('dragover', handleDragOver)
+      node.addEventListener('dragleave', cancelUpdate)
+      node.addEventListener('dragend', cancelUpdate)
+      node.addEventListener('drop', cancelUpdate)
+    }
   }
 
   useEffect(() => {
