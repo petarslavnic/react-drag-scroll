@@ -1,6 +1,6 @@
 {
   "name": "@petarslavnic/react-drag-scroll",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Auto scroll container while dragging element close to the edges",
   "main": "dist/useDragScroll.js",
   "files": [
@@ -61,7 +61,7 @@
     "webpack-cli": "^3.3.10"
   },
   "peerDependencies": {
-    "react": "^16.8.0",
-    "lodash": "^4.17.0"
+    "lodash": "^4.17.0",
+    "react": "^16.8.0"
   }
 }
